@@ -17,24 +17,28 @@ function AddEntryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  const [mode, setMode] = useState("camera");
+  // FIX 1: Start as NULL so we don't default to camera instantly
+  const [mode, setMode] = useState<string | null>(null);
 
   // Sync URL param with Tab State
   useEffect(() => {
     const modeParam = searchParams.get("mode");
-    if (modeParam === "voice") setMode("voice");
-    else setMode("camera");
+    if (modeParam === "voice") {
+        setMode("voice");
+    } else {
+        setMode("camera");
+    }
   }, [searchParams]);
 
   const webcamRef = useRef<Webcam>(null);
-  const recognitionRef = useRef<any>(null); // FIX: Store the mic instance here
+  const recognitionRef = useRef<any>(null);
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [textInput, setTextInput] = useState("");
   const [isListening, setIsListening] = useState(false);
 
-  // --- CLEANUP: Stop everything if user leaves the page ---
+  // Clean up
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {
@@ -43,24 +47,19 @@ function AddEntryContent() {
     };
   }, []);
 
-  // --- VOICE LOGIC (FIXED) ---
+  // --- VOICE LOGIC ---
   const toggleListening = () => {
     if (isListening) {
-      // STOP LOGIC
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
+      if (recognitionRef.current) recognitionRef.current.stop();
       setIsListening(false);
       return;
     }
 
-    // START LOGIC
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       // @ts-ignore
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
-      
-      recognitionRef.current = recognition; // Save it to the Ref
+      recognitionRef.current = recognition;
 
       recognition.continuous = true; 
       recognition.interimResults = true;
@@ -85,9 +84,7 @@ function AddEntryContent() {
         setIsListening(false);
       };
 
-      recognition.onend = () => {
-        setIsListening(false);
-      };
+      recognition.onend = () => setIsListening(false);
 
       recognition.start();
     } else {
@@ -95,7 +92,6 @@ function AddEntryContent() {
     }
   };
 
-  // Capture Image Logic
   const capture = useCallback(async () => {
     const imageSrc = webcamRef.current?.getScreenshot();
     if (!imageSrc) return;
@@ -106,7 +102,6 @@ function AddEntryContent() {
     setLoading(false);
   }, [webcamRef]);
 
-  // Submit Text Logic
   const handleTextAnalyze = async () => {
     if (!textInput.trim()) return;
     setLoading(true);
@@ -116,7 +111,6 @@ function AddEntryContent() {
     setLoading(false);
   };
 
-  // Save to Local Storage Logic
   const handleSave = () => {
     if (!result) return;
     
@@ -136,6 +130,11 @@ function AddEntryContent() {
     }, 1000);
   };
 
+  // FIX 2: If we haven't determined the mode yet, show a spinner instead of the Camera
+  if (!mode) {
+      return <div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-slate-300" /></div>;
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex flex-col space-y-2">
@@ -153,14 +152,13 @@ function AddEntryContent() {
           </TabsTrigger>
         </TabsList>
 
-        {/* CAMERA TAB */}
         <TabsContent value="camera" className="space-y-4 mt-4">
           <Card>
             <CardHeader><CardTitle>Position Label in Frame</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {!result ? (
                 <div className="relative rounded-lg overflow-hidden bg-black aspect-video flex items-center justify-center">
-                  {/* FIX: Conditional rendering to kill camera when switching tabs */}
+                  {/* The camera ONLY renders if mode is strictly 'camera' */}
                   {mode === 'camera' && (
                     <Webcam
                       audio={false}
@@ -188,7 +186,6 @@ function AddEntryContent() {
           </Card>
         </TabsContent>
 
-        {/* VOICE / TEXT TAB */}
         <TabsContent value="voice" className="space-y-4 mt-4">
           <Card>
             <CardHeader><CardTitle>Describe Symptoms</CardTitle></CardHeader>
@@ -201,7 +198,7 @@ function AddEntryContent() {
                   onChange={(e) => setTextInput(e.target.value)}
                 />
                 <button 
-                  onClick={toggleListening} // FIX: Use the new toggle function
+                  onClick={toggleListening} 
                   className={`absolute bottom-4 right-4 p-2 rounded-full transition-all shadow-md ${
                     isListening 
                       ? "bg-red-500 text-white animate-pulse" 
@@ -225,7 +222,6 @@ function AddEntryContent() {
           </Card>
         </TabsContent>
 
-        {/* RESULT CARD (SHARED) */}
         {result && (
             <Card className="border-l-4 border-l-emerald-500 animate-in fade-in slide-in-from-bottom-4 shadow-lg">
               <CardHeader>
