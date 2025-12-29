@@ -16,23 +16,8 @@ export function getEntries(): CareEntry[] {
     return JSON.parse(data);
   }
   
-  return [
-    {
-      id: "demo-1",
-      type: "medication",
-      title: "Morning Meds Taken",
-      details: "Lisinopril 10mg taken with water.",
-      timestamp: new Date().toISOString(),
-    },
-    {
-      id: "demo-2",
-      type: "symptom",
-      title: "Headache",
-      details: "Mild headache in the morning, no fever.",
-      timestamp: new Date(Date.now() - 86400000).toISOString(),
-      severity: "low"
-    }
-  ];
+  // FIX: Return empty array instead of demo data
+  return [];
 }
 
 export function addEntry(entry: Omit<CareEntry, "id" | "timestamp">) {

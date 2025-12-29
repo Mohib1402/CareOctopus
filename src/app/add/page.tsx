@@ -19,6 +19,7 @@ function AddEntryContent() {
   
   const [mode, setMode] = useState("camera");
 
+  // Sync URL param with Tab State
   useEffect(() => {
     const modeParam = searchParams.get("mode");
     if (modeParam === "voice") setMode("voice");
@@ -26,26 +27,57 @@ function AddEntryContent() {
   }, [searchParams]);
 
   const webcamRef = useRef<Webcam>(null);
+  const recognitionRef = useRef<any>(null); // FIX: Store the mic instance here
+
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [textInput, setTextInput] = useState("");
   const [isListening, setIsListening] = useState(false);
 
-  const startListening = () => {
+  // --- CLEANUP: Stop everything if user leaves the page ---
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  // --- VOICE LOGIC (FIXED) ---
+  const toggleListening = () => {
+    if (isListening) {
+      // STOP LOGIC
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    // START LOGIC
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       // @ts-ignore
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
+      
+      recognitionRef.current = recognition; // Save it to the Ref
+
+      recognition.continuous = true; 
+      recognition.interimResults = true;
       recognition.lang = 'en-US';
 
       recognition.onstart = () => setIsListening(true);
       
       recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setTextInput((prev) => prev + (prev ? " " : "") + transcript);
-        setIsListening(false);
+        let finalTranscript = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          }
+        }
+        if (finalTranscript) {
+          setTextInput((prev) => prev + (prev ? " " : "") + finalTranscript);
+        }
       };
 
       recognition.onerror = (event: any) => {
@@ -53,7 +85,9 @@ function AddEntryContent() {
         setIsListening(false);
       };
 
-      recognition.onend = () => setIsListening(false);
+      recognition.onend = () => {
+        setIsListening(false);
+      };
 
       recognition.start();
     } else {
@@ -61,6 +95,7 @@ function AddEntryContent() {
     }
   };
 
+  // Capture Image Logic
   const capture = useCallback(async () => {
     const imageSrc = webcamRef.current?.getScreenshot();
     if (!imageSrc) return;
@@ -71,6 +106,7 @@ function AddEntryContent() {
     setLoading(false);
   }, [webcamRef]);
 
+  // Submit Text Logic
   const handleTextAnalyze = async () => {
     if (!textInput.trim()) return;
     setLoading(true);
@@ -80,6 +116,7 @@ function AddEntryContent() {
     setLoading(false);
   };
 
+  // Save to Local Storage Logic
   const handleSave = () => {
     if (!result) return;
     
@@ -123,13 +160,16 @@ function AddEntryContent() {
             <CardContent className="space-y-4">
               {!result ? (
                 <div className="relative rounded-lg overflow-hidden bg-black aspect-video flex items-center justify-center">
-                  <Webcam
-                    audio={false}
-                    ref={webcamRef}
-                    screenshotFormat="image/jpeg"
-                    videoConstraints={{ facingMode: "environment" }}
-                    className="w-full h-full object-cover"
-                  />
+                  {/* FIX: Conditional rendering to kill camera when switching tabs */}
+                  {mode === 'camera' && (
+                    <Webcam
+                      audio={false}
+                      ref={webcamRef}
+                      screenshotFormat="image/jpeg"
+                      videoConstraints={{ facingMode: "environment" }}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center bg-slate-50 rounded-lg p-8 space-y-4">
@@ -161,13 +201,13 @@ function AddEntryContent() {
                   onChange={(e) => setTextInput(e.target.value)}
                 />
                 <button 
-                  onClick={startListening}
+                  onClick={toggleListening} // FIX: Use the new toggle function
                   className={`absolute bottom-4 right-4 p-2 rounded-full transition-all shadow-md ${
                     isListening 
                       ? "bg-red-500 text-white animate-pulse" 
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   }`}
-                  title="Start Recording"
+                  title={isListening ? "Stop Recording" : "Start Recording"}
                 >
                   {isListening ? <StopCircle size={24} /> : <Mic size={24} />}
                 </button>
@@ -225,7 +265,7 @@ function AddEntryContent() {
 
 export default function AddEntryPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>}>
       <AddEntryContent />
     </Suspense>
   );
