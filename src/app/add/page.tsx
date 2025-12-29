@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import Webcam from "react-webcam";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,7 +13,7 @@ import { analyzeImage, analyzeText } from "@/lib/gemini";
 import { addEntry } from "@/lib/storage";
 import { toast } from "sonner";
 
-export default function AddEntryPage() {
+function AddEntryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -220,5 +220,13 @@ export default function AddEntryPage() {
         )}
       </Tabs>
     </div>
+  );
+}
+
+export default function AddEntryPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>}>
+      <AddEntryContent />
+    </Suspense>
   );
 }
