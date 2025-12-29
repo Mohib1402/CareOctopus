@@ -7,7 +7,7 @@
 [![Demo App](https://img.shields.io/badge/Live_Demo-Visit_App-blue?style=for-the-badge&logo=vercel)](https://care-octopus-b3ak.vercel.app/)
 [![Pitch Video](https://img.shields.io/badge/Pitch_Video-Watch_Now-red?style=for-the-badge&logo=youtube)](YOUR_YOUTUBE_LINK_HERE)
 
-![Project Banner](https://via.placeholder.com/1200x600.png?text=CareOctopus+Dashboard+Preview)
+![Project Banner](https://github.com/Mohib1402/CareOctopus/blob/main/screenshots/Screenshot%202025-12-29%20at%2011.34.37%E2%80%AFAM.png)
 
 ---
 
