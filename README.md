@@ -109,4 +109,4 @@ To run this project locally:
 
 ---
 
-*Built with 🐙 by [Mohibkhan Pathan]*
+*Built with 🐙 by Mohibkhan Pathan*
