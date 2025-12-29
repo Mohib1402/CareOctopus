@@ -99,7 +99,7 @@ To run this project locally:
 ---
 
 ## 🎥 Pitch Video
-[Link to YouTube/Vimeo Video Placeholder]
+[Link to YouTube](https://youtu.be/hUtjzmLZPAc)
 
 ---
 
