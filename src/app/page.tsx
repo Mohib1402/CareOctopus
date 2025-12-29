@@ -24,14 +24,16 @@ export default function Home() {
   };
 
   const calculateSmartScore = (data: CareEntry[]) => {
-    if (data.length === 0) {
+    const symptomLogs = data.filter(entry => entry.type === 'symptom');
+
+    if (symptomLogs.length === 0) {
       setHealthScore(100);
       return;
     }
 
     const now = new Date().getTime();
     
-    const sortedData = [...data].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    const sortedData = [...symptomLogs].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     const latest = sortedData[0];
     const latestTime = new Date(latest.timestamp).getTime();
     const hoursSinceLastLog = (now - latestTime) / (1000 * 60 * 60);
@@ -40,10 +42,10 @@ export default function Home() {
     
     const isLatestCritical = latest.title.toLowerCase().match(/heart attack|stroke|emergency|collapse|unconscious/);
 
-    if (isLatestCritical) baseScore = 30;       // Critical start
-    else if (latest.severity === 'high') baseScore = 60;   // Poor start
-    else if (latest.severity === 'medium') baseScore = 80; // Okay start
-    else if (latest.severity === 'low') baseScore = 95;    // Good start
+    if (isLatestCritical) baseScore = 30;       // Critical
+    else if (latest.severity === 'high') baseScore = 60;   // Poor
+    else if (latest.severity === 'medium') baseScore = 80; // Okay
+    else if (latest.severity === 'low') baseScore = 95;    // Good
 
     let penalty = 0;
     const recentHistory = sortedData.slice(1, 5);
@@ -66,9 +68,7 @@ export default function Home() {
 
     let finalScore = baseScore - penalty + timeHeal;
     
-    finalScore = Math.min(100, Math.max(0, finalScore));
-    
-    setHealthScore(Math.round(finalScore));
+    setHealthScore(Math.round(Math.min(100, Math.max(0, finalScore))));
   };
 
   const handleReset = () => {
